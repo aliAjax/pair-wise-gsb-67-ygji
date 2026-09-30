@@ -15,6 +15,7 @@ import type { AcceptanceItem } from '../../types/domain'
 const route = useRoute()
 const store = useAcceptanceStore()
 const node = computed(() => store.equipment.find((item) => item.id === route.params.id))
+const pathNodes = computed(() => node.value ? store.equipment.filter((value) => value.parentId === node.value!.parentId || value.id === node.value!.id) : [])
 const visible = ref(false)
 const editable = reactive<Partial<AcceptanceItem>>({})
 function openItem(item: AcceptanceItem) { Object.assign(editable, structuredClone(item)); visible.value = true }
@@ -28,7 +29,7 @@ function save() {
 <template>
   <section v-if="node" class="page">
     <div class="section-head"><div><span>{{ node.id }} · {{ node.code }}</span><h2>{{ node.name }}</h2><p>{{ node.type }} · 当前状态 {{ node.status }}</p></div><Tag :value="node.status" :severity="node.status === '已验收' ? 'success' : 'warn'" /></div>
-    <div class="equipment-path"><span v-for="item in store.equipment.filter((value) => value.parentId === node.parentId || value.id === node.id)" :key="item.id" :class="{ active: item.id === node.id }" @click="navigateTo(`/equipment/${item.id}`)">{{ item.name }}</span></div>
+    <div class="equipment-path"><span v-for="item in pathNodes" :key="item.id" :class="{ active: item.id === node!.id }" @click="navigateTo(`/equipment/${item.id}`)">{{ item.name }}</span></div>
     <DataTable :value="node.items" dataKey="id" size="small">
       <Column field="id" header="编号" style="width:100px" />
       <Column field="standard" header="验收标准" />
