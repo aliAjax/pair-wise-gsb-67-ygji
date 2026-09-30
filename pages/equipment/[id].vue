@@ -28,7 +28,7 @@ function save() {
 <template>
   <section v-if="node" class="page">
     <div class="section-head"><div><span>{{ node.id }} · {{ node.code }}</span><h2>{{ node.name }}</h2><p>{{ node.type }} · 当前状态 {{ node.status }}</p></div><Tag :value="node.status" :severity="node.status === '已验收' ? 'success' : 'warn'" /></div>
-    <div class="equipment-path"><span v-for="item in store.equipment.filter((value) => value.parentId === node.parentId || value.id === node.id)" :key="item.id" :class="{ active: item.id === node.id }" @click="navigateTo(`/equipment/${item.id}`)">{{ item.name }}</span></div>
+    <div class="equipment-path"><span v-for="item in store.equipment.filter((value) => node && (value.parentId === node.parentId || value.id === node.id))" :key="item.id" :class="{ active: item.id === node.id }" @click="navigateTo(`/equipment/${item.id}`)">{{ item.name }}</span></div>
     <DataTable :value="node.items" dataKey="id" size="small">
       <Column field="id" header="编号" style="width:100px" />
       <Column field="standard" header="验收标准" />
@@ -37,12 +37,12 @@ function save() {
       <Column field="measured" header="实测结果" />
       <Column field="evidence" header="测试证据" />
       <Column header="状态"><template #body="{ data }"><Tag :value="data.status" :severity="data.status === '合格' ? 'success' : data.status === '不合格' ? 'danger' : 'warn'" /></template></Column>
-      <Column header="版本"><template #body="{ data }">V{{ data.version }}</template></Column>
+      <Column header="版本"><template #body="{ data }">R{{ data.revision ?? data.version }}<small v-if="data.collectedAt"> · 离线{{ data.collectedAt.slice(5, 10) }}</small></template></Column>
       <Column header=""><template #body="{ data }"><Button label="录入/复核" text @click="openItem(data)" /></template></Column>
     </DataTable>
     <div class="certificate-panel">
       <h3>证书与测试附件</h3>
-      <div v-for="certificate in node.certificates" :key="certificate.id" class="certificate-item"><Tag :value="certificate.verified ? '已核验' : '待核验'" :severity="certificate.verified ? 'success' : 'danger'" /><strong>{{ certificate.name }}</strong><span>{{ certificate.issuer }}</span><span>有效期至 {{ certificate.expiresAt }}</span><small>V{{ certificate.version }}</small></div>
+      <div v-for="certificate in node.certificates" :key="certificate.id" class="certificate-item"><Tag :value="certificate.verified ? '已核验' : '待核验'" :severity="certificate.verified ? 'success' : 'danger'" /><strong>{{ certificate.name }}</strong><span>{{ certificate.issuer }}</span><span :class="{ expired: certificate.expiresAt < store.plant.commissioningDate }">有效期至 {{ certificate.expiresAt }}</span><small>R{{ certificate.revision ?? certificate.version }}</small></div>
       <p v-if="!node.certificates.length">当前设备节点暂无证书附件。</p>
     </div>
     <Dialog v-model:visible="visible" header="录入验收项" modal :style="{ width: '620px' }">

@@ -1,4 +1,4 @@
-import type { AcceptanceDefect, AuditEntry, EquipmentNode, Plant } from '../types/domain'
+import type { AcceptanceDefect, AuditEntry, EquipmentNode, Plant, TraceEntry } from '../types/domain'
 
 export const seedPlant: Plant = {
   id: 'PV-2609-NW', name: '西北沙岭一期 120MW光伏电站', gridPoint: '沙岭110kV升压站', capacity: '120 MWp', commissioningDate: '2026-10-08', status: '验收中', version: 7
@@ -45,14 +45,35 @@ export const seedDefects: AcceptanceDefect[] = [
     replies: [{ party: '设备厂家', owner: '王新', content: '档位变送器输出线性偏差，已更换并重新校准。', evidence: '更换记录与校准报告.pdf', repliedAt: '2026-09-29T14:20:00' }], retests: []
   },
   {
-    id: 'AD-260929-02', equipmentId: 'EQ-INV11', itemId: 'IT-I2', title: '逆变器效率低于合同保证值', severity: '一般', status: '待联合复验', owner: '设备厂家', dueDate: '2026-10-02', version: 3, decisionNote: '',
+    id: 'AD-260929-02', equipmentId: 'EQ-INV11', itemId: 'IT-I2', title: '逆变器效率低于合同保证值', severity: '一般', status: '待联合复验', owner: '设备厂家', dueDate: '2026-10-02', version: 3, revision: 3, collectedAt: '2026-09-29T16:30:00', updatedAt: '2026-09-30T09:20:00', stationRevision: 3, decisionNote: '',
     replies: [{ party: '设备厂家', owner: '赵晶', content: '已更新控制固件，在相同测试条件下复测效率98.62%。', evidence: '固件版本记录与复测曲线.zip', repliedAt: '2026-09-29T16:05:00' }, { party: '运维单位', owner: '罗宇', content: '复测条件满足，建议联合见证。', evidence: '测试条件确认单.pdf', repliedAt: '2026-09-29T16:30:00' }],
-    retests: [{ round: 1, passed: false, result: '效率98.27%，未达到98.5%', tester: '联合验收组', testedAt: '2026-09-28T17:10:00' }]
+    retests: [{ round: 1, passed: false, result: '效率98.27%，未达到98.5%', tester: '联合验收组', testedAt: '2026-09-28T17:10:00', retestNo: 'ST-RT-0928-01', source: '站内' }]
   }
 ]
 
 export const seedAudit: AuditEntry[] = [
   { id: 'A-1', entityId: 'PV-2609-NW', action: '创建验收计划', operator: '陆川', detail: '建立5类设备树与18项验收要求', createdAt: '2026-09-25T08:30:00' },
-  { id: 'A-2', entityId: 'AD-260929-01', action: '分派缺陷', operator: '陆川', detail: '重大缺陷分派设备厂家，限期24小时', createdAt: '2026-09-29T09:10:00' },
-  { id: 'A-3', entityId: 'AD-260929-02', action: '提交复验', operator: '罗宇', detail: '第1轮复测效率未达标', createdAt: '2026-09-28T17:10:00' }
+  { id: 'A-2', entityId: 'AD-260929-01', action: '分派缺陷', operator: '陆川', detail: '重大缺陷分派设备厂家，限期24小时', createdAt: '2026-09-29T09:10:00', defectId: 'AD-260929-01' },
+  { id: 'A-3', entityId: 'AD-260929-02', action: '提交复验', operator: '罗宇', detail: '第1轮复测效率未达标', createdAt: '2026-09-28T17:10:00', defectId: 'AD-260929-02' }
+]
+
+export const seedTraces: TraceEntry[] = [
+  {
+    id: 'TRC-SEED-1', entityType: '验收项', entityId: 'IT-I1', equipmentId: 'EQ-INV11', itemId: 'IT-I1',
+    revision: 3, source: '站内', action: '点表核对通过', result: '126/126点一致', evidence: '点表核对记录.xlsx',
+    operator: '联合验收组', createdAt: '2026-09-28T11:20:00'
+  },
+  {
+    id: 'TRC-SEED-2', entityType: '缺陷', entityId: 'AD-260929-02', defectId: 'AD-260929-02',
+    equipmentId: 'EQ-INV11', itemId: 'IT-I2', revision: 3, source: '站内', action: '第1轮站内复测未通过',
+    result: '效率98.27%，未达到98.5%', retestNo: 'ST-RT-0928-01', operator: '联合验收组',
+    createdAt: '2026-09-28T17:10:00'
+  },
+  {
+    id: 'TRC-SEED-3', entityType: '缺陷', entityId: 'AD-260929-01', defectId: 'AD-260929-01',
+    equipmentId: 'EQ-TR1', itemId: 'IT-T2', revision: 4, source: '离线包',
+    action: '厂家提交变送器更换说明', result: '档位变送器输出线性偏差，已更换并重新校准。',
+    evidence: '更换记录与校准报告.pdf', owner: '王新', packageId: 'PKG-20260929', operator: 'PKG-20260929',
+    createdAt: '2026-09-29T14:20:00'
+  }
 ]

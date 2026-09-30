@@ -29,8 +29,8 @@ function submitReply() {
 }
 function submitRetest() {
   if (!selected.value || !retest.result) return
-  store.addRetest(selected.value.id, retest.result, retest.passed)
-  toast.add({ severity: retest.passed ? 'success' : 'warn', summary: retest.passed ? '复验通过，缺陷已关闭' : '复验未通过，返回整改', life: 2500 })
+  const result = store.addRetest(selected.value.id, retest.result, retest.passed)
+  toast.add({ severity: result.ok ? (retest.passed ? 'success' : 'warn') : 'error', summary: result.message, life: 2800 })
   retestVisible.value = false
 }
 function decide(status: '已关闭' | '带条件通过' | '整改中') {
@@ -54,8 +54,20 @@ function decide(status: '已关闭' | '带条件通过' | '整改中') {
       <Column header="版本"><template #body="{ data }">V{{ data.version }}</template></Column>
     </DataTable>
     <div v-if="selected" class="detail-panel">
-      <div class="detail-title"><div><span>{{ selected.id }} · {{ selected.equipmentId }}</span><h3>{{ selected.title }}</h3></div><div><Button label="多方回复" outlined @click="replyVisible = true" /><Button label="联合复验" @click="retestVisible = true" /></div></div>
-      <div class="reply-list"><article v-for="item in selected.replies" :key="item.repliedAt"><Tag :value="item.party" /><strong>{{ item.owner }}</strong><p>{{ item.content }}</p><span>{{ item.evidence }} · {{ item.repliedAt.replace('T', ' ').slice(0, 16) }}</span></article></div>
+      <div class="detail-title"><div><span>{{ selected.id }} · {{ selected.equipmentId }} · {{ selected.itemId }}</span><h3>{{ selected.title }}</h3><small v-if="selected.conflictWithPackageId" class="conflict-note">离线包{{ selected.conflictWithPackageId }}与站内均已修改，已保留双版待裁决</small></div><div><Button label="多方回复" outlined @click="replyVisible = true" /><Button label="联合复测" @click="retestVisible = true" /></div></div>
+      <div class="reply-list"><article v-for="item in selected.replies" :key="`${item.party}-${item.owner}-${item.repliedAt}`"><Tag :value="item.source || '站内'" :severity="item.source === '离线包' ? 'info' : 'success'" /><strong>{{ item.owner }} · {{ item.party }}</strong><p>{{ item.content }}</p><span>{{ item.evidence }} · {{ item.repliedAt.replace('T', ' ').slice(0, 16) }}<template v-if="item.packageId"> · {{ item.packageId }}</template></span></article></div>
+      <div class="retest-band">
+        <h4>复测记录：站内结论作为关闭依据</h4>
+        <article v-for="item in selected.retests" :key="`${item.retestNo || item.round}-${item.testedAt}`" :class="{ station: item.source !== '离线包', vendor: item.source === '离线包' }">
+          <Tag :value="item.source || '站内'" :severity="item.source === '离线包' ? 'info' : 'success'" />
+          <strong>{{ item.retestNo || `第${item.round}轮` }} · {{ item.passed ? '通过' : '不通过' }}</strong>
+          <p>{{ item.result }}</p><small>{{ item.tester }} · {{ item.testedAt.replace('T', ' ').slice(0, 16) }}<template v-if="item.packageId"> · {{ item.packageId }}</template></small>
+        </article>
+      </div>
+      <div v-if="selected.revisionViews?.length" class="revision-inline">
+        <h4>修订版本链</h4>
+        <span v-for="view in selected.revisionViews" :key="`${view.source}-${view.revision}-${view.retestNo}`"><Tag :value="view.source" :severity="view.source === '站内' ? 'success' : 'info'" />R{{ view.revision }} · {{ view.owner }} · {{ view.retestNo || '无复测编号' }}</span>
+      </div>
       <div class="decision-band"><Textarea v-model="retest.note" rows="2" placeholder="验收决定说明，带条件接受时必须填写限制条件" /><Button label="通过并关闭" @click="decide('已关闭')" /><Button label="带条件接受" severity="secondary" outlined @click="decide('带条件通过')" /><Button label="退回整改" severity="danger" outlined @click="decide('整改中')" /></div>
     </div>
     <Dialog v-model:visible="replyVisible" header="提交多方处理说明" modal :style="{ width: '580px' }">
